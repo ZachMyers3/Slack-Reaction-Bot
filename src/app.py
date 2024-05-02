@@ -48,13 +48,21 @@ def handle_reaction_added(body, logger):
     try:
         # Call the conversations.history method using the WebClient
         # The client passes the token you included in initialization
-        result = app.conversations_history(
+        result = app.client.conversations_history(
             channel=channel, inclusive=True, oldest=timestamp, limit=1
         )
 
         message = result["messages"][0]
-        # Print message text
-        print(json.dumps(message, indent=2))
+        for reaction in message["reactions"]:
+            if reaction["count"] >= 7:
+                app.client.chat_postMessage(
+                    channel=channel,
+                    text=(
+                        f"{SLACK_REACTION_EMOJI} {SLACK_REACTION_EMOJI} {SLACK_REACTION_EMOJI}"
+                        "A TEN DOGGER HAS ARRIVED"
+                        f"{SLACK_REACTION_EMOJI} {SLACK_REACTION_EMOJI} {SLACK_REACTION_EMOJI}"
+                    ),
+                )
 
     except Exception as e:
         logger.error(f"Error: {e}")
