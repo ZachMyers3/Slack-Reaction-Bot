@@ -59,7 +59,7 @@ def handle_reaction_added(body, logger):
                     channel=channel,
                     text=(
                         f"{SLACK_REACTION_EMOJI} {SLACK_REACTION_EMOJI} {SLACK_REACTION_EMOJI}"
-                        "A TEN DOGGER HAS ARRIVED"
+                        " A TEN DOGGER HAS ARRIVED "
                         f"{SLACK_REACTION_EMOJI} {SLACK_REACTION_EMOJI} {SLACK_REACTION_EMOJI}"
                     ),
                 )
