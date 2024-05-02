@@ -32,7 +32,6 @@ def handle_message_event(body, logger):
     # get message information from event body
     timestamp = body["event"]["ts"]
     channel = body["event"]["channel"]
-    print(f"{SLACK_REACTION_EMOJI}")
     # post reaction of the message
     app.client.reactions_add(
         channel=channel, name=SLACK_REACTION_EMOJI, timestamp=timestamp
