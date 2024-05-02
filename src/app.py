@@ -1,7 +1,7 @@
 import os
 import sys
 import pathlib
-
+import json
 # Use the package we installed
 from slack_bolt import App
 
@@ -37,6 +37,10 @@ def handle_message_event(body, logger):
         channel=channel, name=SLACK_REACTION_EMOJI, timestamp=timestamp
     )
 
+@app.event("reaction_added")
+def handle_reaction_added(body, logger):
+    print(json.dumps(body, indent=2))
+    logger.info(json.dumps(body, indent=2))
 
 if __name__ == "__main__":
     app.start(port=int(os.environ.get("PORT", 3000)))
