@@ -1,7 +1,7 @@
 import os
 import sys
 import pathlib
-import json
+import inflect
 
 # Use the package we installed
 from slack_bolt import App
@@ -55,11 +55,13 @@ def handle_reaction_added(body, logger):
         message = result["messages"][0]
         for reaction in message["reactions"]:
             if reaction["count"] >= 10:
+                p = inflect.engine()
+                number_word = p.number_to_words(int(reaction["count"])).upper()
                 app.client.chat_postMessage(
                     channel=channel,
                     text=(
                         f":{SLACK_REACTION_EMOJI}: :{SLACK_REACTION_EMOJI}: :{SLACK_REACTION_EMOJI}:"
-                        " A TEN DOGGER HAS ARRIVED "
+                        f" A {number_word} DOGGER HAS ARRIVED "
                         f":{SLACK_REACTION_EMOJI}: :{SLACK_REACTION_EMOJI}: :{SLACK_REACTION_EMOJI}:"
                     ),
                 )
