@@ -54,13 +54,13 @@ def handle_reaction_added(body, logger):
 
         message = result["messages"][0]
         for reaction in message["reactions"]:
-            if reaction["count"] >= 7:
+            if reaction["count"] >= 10:
                 app.client.chat_postMessage(
                     channel=channel,
                     text=(
-                        f"{SLACK_REACTION_EMOJI} {SLACK_REACTION_EMOJI} {SLACK_REACTION_EMOJI}"
+                        f":{SLACK_REACTION_EMOJI}: :{SLACK_REACTION_EMOJI}: :{SLACK_REACTION_EMOJI}:"
                         " A TEN DOGGER HAS ARRIVED "
-                        f"{SLACK_REACTION_EMOJI} {SLACK_REACTION_EMOJI} {SLACK_REACTION_EMOJI}"
+                        f":{SLACK_REACTION_EMOJI}: :{SLACK_REACTION_EMOJI}: :{SLACK_REACTION_EMOJI}:"
                     ),
                 )
 
