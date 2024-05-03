@@ -53,16 +53,21 @@ def handle_reaction_added(body, logger):
         )
 
         message = result["messages"][0]
+        team = message["team"]
         for reaction in message["reactions"]:
             if reaction["count"] >= 10:
                 p = inflect.engine()
                 number_word = p.number_to_words(int(reaction["count"])).upper()
+                timestamp_url = str(timestamp).replace(".", "")
+                reference_url = f"https://{team}.slack.com/archives/{channel}/p{timestamp_url}"
                 app.client.chat_postMessage(
                     channel=channel,
                     text=(
                         f":{SLACK_REACTION_EMOJI}: :{SLACK_REACTION_EMOJI}: :{SLACK_REACTION_EMOJI}:"
                         f" A {number_word} DOGGER HAS ARRIVED "
                         f":{SLACK_REACTION_EMOJI}: :{SLACK_REACTION_EMOJI}: :{SLACK_REACTION_EMOJI}:"
+                        "\n\n"
+                        f"{reference_url}"
                     ),
                 )
 
