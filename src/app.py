@@ -67,7 +67,7 @@ def handle_reaction_added(body, logger):
                         f" A {number_word} DOGGER HAS ARRIVED "
                         f":{SLACK_REACTION_EMOJI}: :{SLACK_REACTION_EMOJI}: :{SLACK_REACTION_EMOJI}:"
                         "\n\n"
-                        f"{reference_url}"
+                        f"<{reference_url}|.>"
                     ),
                 )
 
