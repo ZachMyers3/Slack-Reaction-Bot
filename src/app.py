@@ -2,6 +2,7 @@ import os
 import pathlib
 import random
 import sys
+import time
 
 import dotenv
 import inflect
@@ -18,18 +19,22 @@ else:
     dotenv.load_dotenv(dotenv.find_dotenv())
 
 SLACK_REACTION_EMOJI = os.environ.get("SLACK_REACTION_EMOJI")
+EMOJI_CACHE_TTL = int(os.environ.get("EMOJI_CACHE_TTL", 3600))
 
 app = App(
     token=os.environ.get("SLACK_BOT_TOKEN"),
     signing_secret=os.environ.get("SLACK_SIGNING_SECRET"),
 )
-
 _emoji_cache = None
+_emoji_cache_time = 0
 
 
 def _fetch_random_emoji():
-    global _emoji_cache
-    if _emoji_cache is None:
+    global _emoji_cache, _emoji_cache_time
+    if (
+        _emoji_cache is None
+        or (time.time() - _emoji_cache_time) > EMOJI_CACHE_TTL
+    ):
         result = app.client.emoji_list()
         if result["ok"]:
             # Filter out aliases (url starts with "alias:") to avoid duplicates
@@ -38,6 +43,7 @@ def _fetch_random_emoji():
                 for name, url in result["emoji"].items()
                 if not url.startswith("alias:")
             ]
+            _emoji_cache_time = time.time()
     if _emoji_cache:
         return random.choice(_emoji_cache)
     return "thumbsup"
