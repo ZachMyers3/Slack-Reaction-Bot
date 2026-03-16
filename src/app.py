@@ -74,7 +74,12 @@ def handle_reaction_added(body, logger):
                 emoji = f":{SLACK_REACTION_EMOJI}:"
                 app.client.chat_postMessage(
                     channel=channel,
-                    text=f"{emoji} {emoji} {emoji} A {number_word} DOGGER HAS ARRIVED {emoji} {emoji} {emoji}\n\n<{reference_url}|.>",
+                    text=(
+                        f"{emoji} {emoji} {emoji}"
+                        f" A {number_word} DOGGER HAS ARRIVED "
+                        f"{emoji} {emoji} {emoji}"
+                        f"\n\n<{reference_url}|.>"
+                    ),
                 )
     except Exception as e:
         logger.error(f"Error: {e}")

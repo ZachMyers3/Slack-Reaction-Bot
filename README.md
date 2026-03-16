@@ -2,16 +2,16 @@
 
 ## 📃 Description
 
-A simple slack bot using `slack_bolt` to listen to message events for a given channel and automatically react to them. 
+A simple slack bot using `slack_bolt` to listen to message events for a given channel and automatically react to them with a random emoji from your workspace's custom emoji list. 
 
 ## 🛠️ Installation
 
 ### 🤖 Requirements
 
-1. `slack_bolt` requires multiple enviornment variables. 
-   1. `SLACK_BOT_TOKEN` which is a valid slack bot token with `reactions:write` and `channels:read` permissions.
+1. `slack_bolt` requires multiple environment variables.
+   1. `SLACK_BOT_TOKEN` which is a valid slack bot token with `reactions:write`, `channels:read`, and `emoji:read` permissions.
    2. `SLACK_SIGNING_SECRET` the signing token for listening to slack events (in our case, incoming messages)
-   3. `SLACK_REACTION_EMOJI` the string name of the emoji that we want to auto-react.
+   3. `SLACK_REACTION_EMOJI` fallback emoji if the workspace has no custom emojis.
 
 ### 🐍 Running Locally
 
