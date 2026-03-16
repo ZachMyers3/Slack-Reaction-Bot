@@ -1,13 +1,13 @@
 import os
-import sys
 import pathlib
-import inflect
-
-# Use the package we installed
-from slack_bolt import App
+import random
+import sys
 
 import dotenv
+import inflect
+from slack_bolt import App
 
+# Handle PyInstaller bundled executable
 if getattr(sys, "frozen", False):
     ABS_PATH = pathlib.Path(sys._MEIPASS).parent
     DOTENV_PATH = ABS_PATH / ".env"
@@ -17,60 +17,65 @@ else:
     ABS_PATH = ABS_PATH.parent.parent
     dotenv.load_dotenv(dotenv.find_dotenv())
 
-env_file = ABS_PATH / ".env"
-
 SLACK_REACTION_EMOJI = os.environ.get("SLACK_REACTION_EMOJI")
 
-# Initialize your app with your bot token and signing secret
 app = App(
     token=os.environ.get("SLACK_BOT_TOKEN"),
     signing_secret=os.environ.get("SLACK_SIGNING_SECRET"),
 )
 
+_emoji_cache = None
+
+
+def get_random_emoji():
+    global _emoji_cache
+    if _emoji_cache is None:
+        result = app.client.emoji_list()
+        if result["ok"]:
+            # Filter out aliases (url starts with "alias:") to avoid duplicates
+            _emoji_cache = [
+                name
+                for name, url in result["emoji"].items()
+                if not url.startswith("alias:")
+            ]
+    if _emoji_cache:
+        return random.choice(_emoji_cache)
+    return SLACK_REACTION_EMOJI
+
 
 @app.event("message")
 def handle_message_event(body, logger):
-    # get message information from event body
     timestamp = body["event"]["ts"]
     channel = body["event"]["channel"]
-    # post reaction of the message
     app.client.reactions_add(
-        channel=channel, name=SLACK_REACTION_EMOJI, timestamp=timestamp
+        channel=channel, name=get_random_emoji(), timestamp=timestamp
     )
 
 
 @app.event("reaction_added")
 def handle_reaction_added(body, logger):
-    # get message information from event body
     timestamp = body["event"]["item"]["ts"]
     channel = body["event"]["item"]["channel"]
 
     try:
-        # Call the conversations.history method using the WebClient
-        # The client passes the token you included in initialization
         result = app.client.conversations_history(
             channel=channel, inclusive=True, oldest=timestamp, limit=1
         )
-
         message = result["messages"][0]
         team = message["team"]
+
         for reaction in message["reactions"]:
             if reaction["count"] >= 10:
-                p = inflect.engine()
-                number_word = p.number_to_words(int(reaction["count"])).upper()
-                timestamp_url = str(timestamp).replace(".", "")
+                number_word = (
+                    inflect.engine().number_to_words(reaction["count"]).upper()
+                )
+                timestamp_url = timestamp.replace(".", "")
                 reference_url = f"https://{team}.slack.com/archives/{channel}/p{timestamp_url}"
+                emoji = f":{SLACK_REACTION_EMOJI}:"
                 app.client.chat_postMessage(
                     channel=channel,
-                    text=(
-                        f":{SLACK_REACTION_EMOJI}: :{SLACK_REACTION_EMOJI}: :{SLACK_REACTION_EMOJI}:"
-                        f" A {number_word} DOGGER HAS ARRIVED "
-                        f":{SLACK_REACTION_EMOJI}: :{SLACK_REACTION_EMOJI}: :{SLACK_REACTION_EMOJI}:"
-                        "\n\n"
-                        f"<{reference_url}|.>"
-                    ),
+                    text=f"{emoji} {emoji} {emoji} A {number_word} DOGGER HAS ARRIVED {emoji} {emoji} {emoji}\n\n<{reference_url}|.>",
                 )
-
     except Exception as e:
         logger.error(f"Error: {e}")
 
