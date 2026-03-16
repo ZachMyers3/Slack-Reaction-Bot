@@ -27,7 +27,7 @@ app = App(
 _emoji_cache = None
 
 
-def get_random_emoji():
+def _fetch_random_emoji():
     global _emoji_cache
     if _emoji_cache is None:
         result = app.client.emoji_list()
@@ -40,6 +40,12 @@ def get_random_emoji():
             ]
     if _emoji_cache:
         return random.choice(_emoji_cache)
+    return "thumbsup"
+
+
+def get_emoji():
+    if SLACK_REACTION_EMOJI == "RANDOM":
+        return _fetch_random_emoji()
     return SLACK_REACTION_EMOJI
 
 
@@ -48,7 +54,7 @@ def handle_message_event(body, logger):
     timestamp = body["event"]["ts"]
     channel = body["event"]["channel"]
     app.client.reactions_add(
-        channel=channel, name=get_random_emoji(), timestamp=timestamp
+        channel=channel, name=get_emoji(), timestamp=timestamp
     )
 
 
@@ -71,7 +77,7 @@ def handle_reaction_added(body, logger):
                 )
                 timestamp_url = timestamp.replace(".", "")
                 reference_url = f"https://{team}.slack.com/archives/{channel}/p{timestamp_url}"
-                emoji = f":{SLACK_REACTION_EMOJI}:"
+                emoji = f":{get_emoji()}:"
                 app.client.chat_postMessage(
                     channel=channel,
                     text=(
