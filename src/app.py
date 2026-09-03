@@ -20,6 +20,8 @@ else:
 
 SLACK_REACTION_EMOJI = os.environ.get("SLACK_REACTION_EMOJI")
 EMOJI_CACHE_TTL = int(os.environ.get("EMOJI_CACHE_TTL", 3600))
+SLACK_TARGET_USER_ID = os.environ.get("SLACK_TARGET_USER_ID")
+SLACK_TARGET_USER_EMOJI = os.environ.get("SLACK_TARGET_USER_EMOJI")
 
 app = App(
     token=os.environ.get("SLACK_BOT_TOKEN"),
@@ -59,9 +61,24 @@ def get_emoji():
 def handle_message_event(body, logger):
     timestamp = body["event"]["ts"]
     channel = body["event"]["channel"]
-    app.client.reactions_add(
-        channel=channel, name=get_emoji(), timestamp=timestamp
+    user = body["event"].get("user")
+
+    # If target user is configured, only react to their messages
+    if SLACK_TARGET_USER_ID and user != SLACK_TARGET_USER_ID:
+        return
+
+    # Use target user emoji if configured and the user matches, otherwise use default
+    emoji = (
+        SLACK_TARGET_USER_EMOJI
+        if (
+            SLACK_TARGET_USER_ID
+            and user == SLACK_TARGET_USER_ID
+            and SLACK_TARGET_USER_EMOJI
+        )
+        else get_emoji()
     )
+
+    app.client.reactions_add(channel=channel, name=emoji, timestamp=timestamp)
 
 
 @app.event("reaction_added")
