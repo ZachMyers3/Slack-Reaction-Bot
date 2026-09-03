@@ -15,6 +15,7 @@ A simple slack bot using `slack_bolt` to listen to message events for a given ch
    4. `EMOJI_CACHE_TTL` (optional) how long to cache the emoji list in seconds when using random mode. Defaults to 3600 (1 hour).
    5. `SLACK_TARGET_USER_ID` (optional) if set, only react to messages from this specific user ID.
    6. `SLACK_TARGET_USER_EMOJI` (optional) if set along with `SLACK_TARGET_USER_ID`, use this emoji for the target user's messages instead of the default emoji.
+   7. `SLACK_TARGET_RANDOM_INTERVAL` (optional) if set along with `SLACK_TARGET_USER_ID` and `SLACK_TARGET_USER_EMOJI`, force the target emoji every N messages from that user (with ±20% random variance). Between those forced reactions the target user gets the normal emoji (`SLACK_REACTION_EMOJI` / random) instead.
 
 ### 🐍 Running Locally
 
@@ -36,3 +37,5 @@ docker image build -t slack-reaction-bot .
 
 docker run --rm --name slack-reaction-bot --env SLACK_BOT_TOKEN=xoxb-your-token-here --env SLACK_SIGNING_SECRET=signing-secret-here slack-reaction-bot
 ```
+
+Pushes to `master` also publish the image to GitHub Container Registry as `ghcr.io/zachmyers3/slack-reaction-bot:latest` and `ghcr.io/zachmyers3/slack-reaction-bot:<short-sha>`.

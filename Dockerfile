@@ -11,7 +11,7 @@ COPY poetry.lock pyproject.toml /code/
 
 RUN poetry config virtualenvs.create false
 RUN poetry run python -m pip install --upgrade pip
-RUN poetry install --no-root --no-dev
+RUN poetry install --no-root
 
 # Creating folders, and files for a project:
 COPY ./src/app.py app.py

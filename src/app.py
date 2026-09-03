@@ -22,6 +22,10 @@ SLACK_REACTION_EMOJI = os.environ.get("SLACK_REACTION_EMOJI")
 EMOJI_CACHE_TTL = int(os.environ.get("EMOJI_CACHE_TTL", 3600))
 SLACK_TARGET_USER_ID = os.environ.get("SLACK_TARGET_USER_ID")
 SLACK_TARGET_USER_EMOJI = os.environ.get("SLACK_TARGET_USER_EMOJI")
+_raw_interval = os.environ.get("SLACK_TARGET_RANDOM_INTERVAL")
+SLACK_TARGET_RANDOM_INTERVAL = (
+    int(_raw_interval) if _raw_interval else None
+)
 
 app = App(
     token=os.environ.get("SLACK_BOT_TOKEN"),
@@ -29,6 +33,17 @@ app = App(
 )
 _emoji_cache = None
 _emoji_cache_time = 0
+_target_msg_count = 0
+# React on the first matching message, then apply the random interval
+_target_next_threshold = 1
+
+
+def _next_interval_threshold(base):
+    """Return a threshold of base ± 20%, always at least 1."""
+    variance = max(0, int(base * 0.2))
+    low = max(1, base - variance)
+    high = max(low, base + variance)
+    return random.randint(low, high)
 
 
 def _fetch_random_emoji():
@@ -59,6 +74,8 @@ def get_emoji():
 
 @app.event("message")
 def handle_message_event(body, logger):
+    global _target_msg_count, _target_next_threshold
+
     timestamp = body["event"]["ts"]
     channel = body["event"]["channel"]
     user = body["event"].get("user")
@@ -67,16 +84,24 @@ def handle_message_event(body, logger):
     if SLACK_TARGET_USER_ID and user != SLACK_TARGET_USER_ID:
         return
 
-    # Use target user emoji if configured and the user matches, otherwise use default
-    emoji = (
-        SLACK_TARGET_USER_EMOJI
-        if (
-            SLACK_TARGET_USER_ID
-            and user == SLACK_TARGET_USER_ID
-            and SLACK_TARGET_USER_EMOJI
-        )
-        else get_emoji()
-    )
+    use_target_emoji = False
+    if (
+        SLACK_TARGET_USER_ID
+        and user == SLACK_TARGET_USER_ID
+        and SLACK_TARGET_USER_EMOJI
+    ):
+        if SLACK_TARGET_RANDOM_INTERVAL:
+            _target_msg_count += 1
+            if _target_msg_count >= _target_next_threshold:
+                use_target_emoji = True
+                _target_msg_count = 0
+                _target_next_threshold = _next_interval_threshold(
+                    SLACK_TARGET_RANDOM_INTERVAL
+                )
+        else:
+            use_target_emoji = True
+
+    emoji = SLACK_TARGET_USER_EMOJI if use_target_emoji else get_emoji()
 
     app.client.reactions_add(channel=channel, name=emoji, timestamp=timestamp)
 
