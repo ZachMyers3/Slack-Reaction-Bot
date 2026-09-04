@@ -34,6 +34,36 @@ _emoji_cache_time = 0
 _target_msg_count = 0
 # React on the first matching message, then apply the random interval
 _target_next_threshold = 1
+_self_ids = None
+
+# Subtypes that are channel bookkeeping rather than someone posting content.
+# Anything not listed here (file_share, thread_broadcast, me_message,
+# bot_message from apps like Giphy, ...) is a real post and gets a reaction.
+SYSTEM_SUBTYPES = {
+    "message_changed",
+    "message_deleted",
+    "message_replied",
+    "channel_join",
+    "channel_leave",
+    "channel_archive",
+    "channel_unarchive",
+    "channel_name",
+    "channel_topic",
+    "channel_purpose",
+    "channel_convert_to_private",
+    "channel_convert_to_public",
+    "channel_posting_permissions",
+    "group_join",
+    "group_leave",
+    "group_archive",
+    "group_unarchive",
+    "group_name",
+    "group_topic",
+    "group_purpose",
+    "pinned_item",
+    "unpinned_item",
+    "ekm_access_denied",
+}
 
 
 def _next_interval_threshold(base):
@@ -70,6 +100,25 @@ def get_emoji():
     return SLACK_REACTION_EMOJI
 
 
+def _is_own_message(event):
+    """True if this app posted the message.
+
+    Bolt's IgnoringSelfEvents middleware already drops these, so this only
+    guards against reacting to our own announcements if that is ever disabled.
+    """
+    global _self_ids
+    if _self_ids is None:
+        try:
+            auth = app.client.auth_test()
+            _self_ids = (auth.get("bot_id"), auth.get("user_id"))
+        except Exception:
+            _self_ids = (None, None)
+    own_bot_id, own_user_id = _self_ids
+    return (own_bot_id is not None and event.get("bot_id") == own_bot_id) or (
+        own_user_id is not None and event.get("user") == own_user_id
+    )
+
+
 @app.event("message")
 def handle_message_event(body, logger):
     global _target_msg_count, _target_next_threshold
@@ -79,35 +128,10 @@ def handle_message_event(body, logger):
     channel = event["channel"]
     user = event.get("user")
 
-    # Skip bot messages and system subtypes (edits, joins, deletes, etc.).
-    # Allow user-generated content like file_share, thread_broadcast, me_message, etc.
-    subtype = event.get("subtype")
-    system_subtypes = {
-        "message_changed",
-        "message_deleted",
-        "message_replied",
-        "channel_join",
-        "channel_leave",
-        "channel_archive",
-        "channel_unarchive",
-        "channel_name",
-        "channel_topic",
-        "channel_purpose",
-        "channel_convert_to_private",
-        "channel_convert_to_public",
-        "channel_posting_permissions",
-        "group_join",
-        "group_leave",
-        "group_archive",
-        "group_unarchive",
-        "group_name",
-        "group_topic",
-        "group_purpose",
-        "pinned_item",
-        "unpinned_item",
-        "ekm_access_denied",
-    }
-    if event.get("bot_id") or (subtype and subtype in system_subtypes):
+    # Skip channel bookkeeping (edits, joins, deletes) and our own posts.
+    # App-posted content such as a Giphy GIF arrives with a bot_id set, so a
+    # blanket bot_id check would drop it.
+    if event.get("subtype") in SYSTEM_SUBTYPES or _is_own_message(event):
         return
 
     use_target_emoji = False
@@ -142,9 +166,10 @@ def handle_reaction_added(body, logger):
             channel=channel, inclusive=True, oldest=timestamp, limit=1
         )
         message = result["messages"][0]
-        team = message["team"]
+        # App-posted messages (e.g. Giphy) have no team field of their own
+        team = message.get("team") or body.get("team_id")
 
-        for reaction in message["reactions"]:
+        for reaction in message.get("reactions", []):
             if reaction["count"] >= 10:
                 number_word = (
                     inflect.engine().number_to_words(reaction["count"]).upper()
