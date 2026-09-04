@@ -13,7 +13,7 @@ A simple slack bot using `slack_bolt` to listen to message events for a given ch
    2. `SLACK_SIGNING_SECRET` the signing token for listening to slack events (in our case, incoming messages)
    3. `SLACK_REACTION_EMOJI` the emoji to react with, or set to `RANDOM` to use a random emoji from your workspace's custom emoji list.
    4. `EMOJI_CACHE_TTL` (optional) how long to cache the emoji list in seconds when using random mode. Defaults to 3600 (1 hour).
-   5. `SLACK_TARGET_USER_ID` (optional) if set, only react to messages from this specific user ID.
+   5. `SLACK_TARGET_USER_ID` (optional) if set, this user gets the special handling below. Everyone else still gets the normal emoji (`SLACK_REACTION_EMOJI` / random).
    6. `SLACK_TARGET_USER_EMOJI` (optional) if set along with `SLACK_TARGET_USER_ID`, use this emoji for the target user's messages instead of the default emoji.
    7. `SLACK_TARGET_RANDOM_INTERVAL` (optional) if set along with `SLACK_TARGET_USER_ID` and `SLACK_TARGET_USER_EMOJI`, force the target emoji every N messages from that user (with ±20% random variance). Between those forced reactions the target user gets the normal emoji (`SLACK_REACTION_EMOJI` / random) instead.
 

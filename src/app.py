@@ -76,12 +76,13 @@ def get_emoji():
 def handle_message_event(body, logger):
     global _target_msg_count, _target_next_threshold
 
-    timestamp = body["event"]["ts"]
-    channel = body["event"]["channel"]
-    user = body["event"].get("user")
+    event = body["event"]
+    timestamp = event["ts"]
+    channel = event["channel"]
+    user = event.get("user")
 
-    # If target user is configured, only react to their messages
-    if SLACK_TARGET_USER_ID and user != SLACK_TARGET_USER_ID:
+    # Skip our own messages and non-plain messages (edits, joins, etc.)
+    if event.get("bot_id") or event.get("subtype"):
         return
 
     use_target_emoji = False
