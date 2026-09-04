@@ -23,9 +23,7 @@ EMOJI_CACHE_TTL = int(os.environ.get("EMOJI_CACHE_TTL", 3600))
 SLACK_TARGET_USER_ID = os.environ.get("SLACK_TARGET_USER_ID")
 SLACK_TARGET_USER_EMOJI = os.environ.get("SLACK_TARGET_USER_EMOJI")
 _raw_interval = os.environ.get("SLACK_TARGET_RANDOM_INTERVAL")
-SLACK_TARGET_RANDOM_INTERVAL = (
-    int(_raw_interval) if _raw_interval else None
-)
+SLACK_TARGET_RANDOM_INTERVAL = int(_raw_interval) if _raw_interval else None
 
 app = App(
     token=os.environ.get("SLACK_BOT_TOKEN"),
@@ -82,11 +80,34 @@ def handle_message_event(body, logger):
     user = event.get("user")
 
     # Skip bot messages and system subtypes (edits, joins, deletes, etc.).
-    # Image/file posts arrive as subtype "file_share" and should still get a reaction.
-    # Slack has also started sending some file posts as normal messages with a
-    # `files` array and no subtype — those already pass this check.
+    # Allow user-generated content like file_share, thread_broadcast, me_message, etc.
     subtype = event.get("subtype")
-    if event.get("bot_id") or (subtype and subtype != "file_share"):
+    system_subtypes = {
+        "message_changed",
+        "message_deleted",
+        "message_replied",
+        "channel_join",
+        "channel_leave",
+        "channel_archive",
+        "channel_unarchive",
+        "channel_name",
+        "channel_topic",
+        "channel_purpose",
+        "channel_convert_to_private",
+        "channel_convert_to_public",
+        "channel_posting_permissions",
+        "group_join",
+        "group_leave",
+        "group_archive",
+        "group_unarchive",
+        "group_name",
+        "group_topic",
+        "group_purpose",
+        "pinned_item",
+        "unpinned_item",
+        "ekm_access_denied",
+    }
+    if event.get("bot_id") or (subtype and subtype in system_subtypes):
         return
 
     use_target_emoji = False
