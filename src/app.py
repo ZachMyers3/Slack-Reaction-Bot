@@ -81,8 +81,12 @@ def handle_message_event(body, logger):
     channel = event["channel"]
     user = event.get("user")
 
-    # Skip our own messages and non-plain messages (edits, joins, etc.)
-    if event.get("bot_id") or event.get("subtype"):
+    # Skip bot messages and system subtypes (edits, joins, deletes, etc.).
+    # Image/file posts arrive as subtype "file_share" and should still get a reaction.
+    # Slack has also started sending some file posts as normal messages with a
+    # `files` array and no subtype — those already pass this check.
+    subtype = event.get("subtype")
+    if event.get("bot_id") or (subtype and subtype != "file_share"):
         return
 
     use_target_emoji = False
